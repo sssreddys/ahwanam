@@ -22,11 +22,17 @@ class Vendor extends Model implements Authenticatable
     'image',
     'password',
     'gender',
-    'vendor_type'
+    'vendor_type',
+    'consent',
+    'status',
   ];
+  protected $casts = [
+    'address' => 'array',
+    'consent' => 'boolean',
+];
 
 
-
-
+const STATUS_ACTIVE = 1;
+const STATUS_INACTIVE = 0;
 
 }

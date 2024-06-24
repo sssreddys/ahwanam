@@ -19,11 +19,13 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('email')->unique();
             $table->string('phone')->unique();
-            $table->text('address');
-            $table->string('image');
+            $table->json('address'); // JSON column to store address information
+            $table->string('image')->nullable();
             $table->string('gender');
             $table->string('vendor_type')->nullable();
             $table->string('password');
+            $table->boolean('consent')->default(false);
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });
 

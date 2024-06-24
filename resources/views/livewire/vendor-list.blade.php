@@ -79,73 +79,74 @@
     <section class="bgGray">
         <div class="row m-0">
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('photographer')">
                     <p class="fs-1">📷</p>
                     <p class="fw-bold">Photographer</p>
                 </div>
             </div>
+
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('makeup artist')">
                     <p class="fs-1">💄</p>
                     <p class="fw-bold">Makeup Artist</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('decorator')">
                     <p class="fs-1">🎉</p>
                     <p class="fw-bold">Decorator</p>
                 </div>
             </div>
-            <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+            {{-- <div class="col-md-2 text-center p-3">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('wedding planner')">
                     <p class="fs-1">📝</p>
                     <p class="fw-bold">Wedding Planner</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('wedding wear')">
                     <p class="fs-1">👗</p>
                     <p class="fw-bold">Wedding Wear</p>
                 </div>
-            </div>
+            </div> --}}
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('wedding venue')">
                     <p class="fs-1">🏩</p>
                     <p class="fw-bold">Wedding Venue</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('videographer')">
                     <p class="fs-1">🎥</p>
                     <p class="fw-bold">Videographer</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('choreographer')">
                     <p class="fs-1">💃🏻</p>
                     <p class="fw-bold">Choreographer</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('mehndi artist')">
                     <p class="fs-1">✋🏼</p>
                     <p class="fw-bold">Mehndi Artist</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard"wire:click="redirectToVendorRegister('invitation designer')">
                     <p class="fs-1">💌</p>
                     <p class="fw-bold">Invitation Designer</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('wedding wear')">
                     <p class="fs-1">👗</p>
                     <p class="fw-bold">Wedding Wear</p>
                 </div>
             </div>
             <div class="col-md-2 text-center p-3">
-                <div class="bg-white rounded-3 vendorCard" onclick="redirectToPage('vendor-register')">
+                <div class="bg-white rounded-3 vendorCard" wire:click="redirectToVendorRegister('wedding venue')">
                     <p class="fs-1">🏩</p>
                     <p class="fw-bold">Wedding Venue</p>
                 </div>

@@ -9,7 +9,9 @@ use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Exception\RequestException;
+use Illuminate\Http\Request;
 class VendorRegister extends Component
 {
 
@@ -21,122 +23,205 @@ class VendorRegister extends Component
     public $last_name;
     public $email;
     public $phone;
+    public $addresses = [];
     public $address;
     public $image;
     public $password;
     public $confirmPassword;
     public $vendor_type = '';
-    public $vendorTypes = [];
-    public $name=[];
-    public $newVendorType = ''; // Added property to store new vendor type
+    public $errorMessage;
+    public $vendorType;
+    public $name = [];
     public $showAddVendorTypeModal = false;
     public $gender;
     public $registrationType = '';
-
+    public $postalCode;
+    public $locationData;
     public $passwordConfirmation;
     public $pincode;
     public $consent = false;
-
-    public $countries = [];
-    public $states = [];
+    public $status;
+    public $country;
+    public $state;
+    public $district;
     public $cities = [];
-
+    public $city;
     public $selectedCountry = null;
     public $selectedState = null;
     public $selectedCity = null;
-
-public function registerVendor(){
-        $validatedData = $this->validate([
-        'first_name' => 'required',
-        'last_name' => 'required',
-        'email' => 'required|email|unique:vendors',
-        'phone' => 'required|unique:vendors',
-        'address' => 'required',
-        'gender' => 'required',
-        'image' => 'required|image|max:2048', // Limit image to 2MB
-        'password' => 'required|min:8',
-        'confirmPassword' => 'required|same:password', // Confirm password should match password
-    ], [
-        'confirmPassword.same' => 'The confirm password must match the password field.',
-        // 'vendor_type' => 'required',
-    ]);
-
-    // Split the name into first and last names
-   // Combine first_name and last_name into a single 'name' field with capitalized first letters
-   $validatedData['first_name'] = ucwords($validatedData['first_name']);
-   $validatedData['last_name'] = ucwords($validatedData['last_name']);
-
-    // unset($validatedData['first_name']);
-    // unset($validatedData['last_name']);
-    $validatedData['password'] = bcrypt($validatedData['password']);
-
-    // Store the uploaded image in the public/vendor_images directory
-    $imageName = Carbon::now()->timestamp. '.' .$this->image->extension();
-    $validatedData['image'] = $this->image->storeAs('vendor_images', $imageName);
-    //dd($validatedData);
-   Vendor::create($validatedData);
-
-    // session()->flash('message', 'Vendor Registered Successfully!');
-    // $this->emit('vendorRegistered');
-    return redirect()->route('register')->with('message', 'Vendor registered successfully!');
-    $this->reset();
+    public $selectedDistrict = null;
 
 
-}
-
-public function fetchPincodeDetails()
-{
-    $response = Http::get('https://api.postalpincode.in/pincode/' . $this->pincode);
-    $data = json_decode($response->body());
-
-    if (isset($data->PostOffice[0])) {
-        $this->city = $data->PostOffice[0]->Block;
-        $this->state = $data->PostOffice[0]->State;
-        $this->district = $data->PostOffice[0]->District;
-        $this->region = $data->PostOffice[0]->Region;
-        $this->circle = $data->PostOffice[0]->Circle;
-        $this->block = $data->PostOffice[0]->Block;
-        $this->deliveryStatus = $data->PostOffice[0]->DeliveryStatus;
-    } else {
-        $this->resetFields();
-        session()->flash('error', 'No details found for the given pincode.');
-    }
-}
-
-private function resetFields()
-{
-    $this->city = null;
-    $this->state = null;
-    $this->district = null;
-    $this->region = null;
-    $this->circle = null;
-    $this->block = null;
-    $this->deliveryStatus = null;
-}
-
-
-    public function mount()
+    public function registerVendor()
     {
-        // try {
-        //     // Fetch vendor types from the database
-        //     $vendorTypes = VendorType::pluck('name')->toArray();
+        $validatedData = $this->validate([
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'email' => 'required|email|unique:vendors',
+            'phone' => ['required', 'regex:/^(?:\+91|91|0)?[6-9]\d{9}$/', 'unique:vendors,phone'],
+            'address' => 'required', // Ensure address is an array
+            'postalCode' => 'required|digits:6',
+            'gender' => 'required',
+            'city' => 'required_without:selectedCity',
+            'state' => 'required_without:selectedState',
+            'country' => 'required_without:selectedCountry',
+            'district' => 'required_without:selectedDistrict',
+            'selectedDistrict' => 'required_without:district',
+            'selectedCity' => 'required_without:city',
+            'selectedState' => 'required_without:state',
+            'selectedCountry' => 'required_without:country',
+            // 'image' => 'image|max:2048', // Limit image to 2MB
+            'password' => 'required|min:8',
+            'confirmPassword' => 'required|same:password', // Confirm password should match password
+            'consent' => 'accepted',
+        ], [
+            // 'first_name.required' => 'Please enter your first name.',
+            // 'last_name.required' => 'Please enter your last name.',
+            // 'email.required' => 'Please enter your email address.',
+            // 'email.email' => 'Please enter a valid email address.',
+            // 'email.unique' => 'This email address is already registered.',
+            // 'phone.required' => 'Please enter your phone number.',
+            'phone.regex' => 'Please enter a valid Indian phone number.',
+            // 'address.required' => 'Please enter your address.',
+            // 'postalCode.required' => 'Please enter your postal code.',
+            // 'postalCode.digits' => 'Postal code must be exactly 6 digits.',
+            // 'gender.required' => 'Please select your gender.',
+            // 'city.required_without' => 'Please enter your city or select from the list.',
+            // 'state.required_without' => 'Please enter your state or select from the list.',
+            // 'country.required_without' => 'Please enter your country or select from the list.',
+            // 'district.required_without' => 'Please enter your district or select from the list.',
+            // 'selectedDistrict.required_without' => 'Please enter your district or select from the list.',
+            // 'selectedCity.required_without' => 'Please enter your city or select from the list.',
+            // 'selectedState.required_without' => 'Please enter your state or select from the list.',
+            // 'selectedCountry.required_without' => 'Please enter your country or select from the list.',
+            // 'password.required' => 'Please enter a password.',
+            // 'password.min' => 'Password must be at least :min characters.',
+            // 'confirmPassword.required' => 'Please confirm your password.',
+            'confirmPassword.same' => 'Password and confirm password must match.',
+            // 'consent.accepted' => 'You must accept the terms and conditions to proceed.',
+        ]);
 
-        //     // Check if vendor types were successfully fetched
-        //     if (!empty($vendorTypes)) {
-        //         // Set the list of vendor types
-        //         $this->vendorTypes = $vendorTypes;
-        //     } else {
-        //         // If vendor types were not fetched, throw an error
-        //         throw new \Exception('Failed to retrieve vendor types.');
-        //     }
-        // } catch (\Exception $e) {
-        //     // Handle the exception by setting the list of vendor types to an empty array
-        //     $this->vendorTypes = [];
+        // Process validated data
+        $validatedData['first_name'] = ucwords($validatedData['first_name']);
+        $validatedData['last_name'] = ucwords($validatedData['last_name']);
+        $validatedData['password'] = bcrypt($validatedData['password']);
+        //  $validatedData['status'] = (int) $this->status;
+        $validatedData['vendor_type'] = $this->vendorType;
 
-        //     // You can add an error message here if you want to notify the user
-        //     // Example: $this->addError('vendorTypes', 'Error: ' . $e->getMessage());
-        // }
+        // If address is not dynamically fetched, use manually entered data
+        if (!empty($validatedData['address'])) {
+            $validatedData['address'] = [
+                'address' => $validatedData['address'],
+                'postalCode' => $validatedData['postalCode'],
+                'city' => $validatedData['city'],
+                'state' => $validatedData['state'],
+                'country' => $validatedData['country'],
+                'selectedCountry' => $validatedData['selectedCountry'],
+                'selectedCity' => $validatedData['selectedCity'],
+                'selectedDistrict' => $validatedData['selectedDistrict'],
+            ];
+            // dd( $validatedData['address']);
+        }
+        // Store the uploaded image if provided
+        //dd($validatedData);
+        if ($this->image) {
+            $imageName = time() . '.' . $this->image->getClientOriginalExtension();
+            $this->image->storeAs('vendor_images', $imageName);
+            $validatedData['image'] = $imageName;
+        }
+
+dd($validatedData);
+
+        // Uncomment the following line to actually create the vendor record
+        Vendor::create($validatedData);
+
+        // Flash a success message and reset the form
+        session()->flash('message', 'Vendor registered successfully!');
+        return redirect()->route('vendor-register');
     }
+
+
+    public function fetchLocationData()
+    {
+        // Make sure postalCode is not empty
+        if (!empty($this->postalCode)) {
+            // Make HTTP request to fetch location data
+            $response = Http::get('https://api.postalpincode.in/pincode/' . $this->postalCode);
+
+            // Check if request was successful
+            if ($response->successful()) {
+                $data = $response->json();
+
+                // Assuming the API returns data in a specific format
+                if (!empty($data) && isset($data[0]['PostOffice'][0])) {
+                    $postOffice = $data[0]['PostOffice'][0];
+
+                    // Set state, country, and cities
+                    $this->selectedState = $postOffice['State'];
+                    $this->selectedCountry = $postOffice['Country'];
+                    $this->selectedDistrict = $postOffice['District'];
+                    $this->cities = array_column($data[0]['PostOffice'], 'Name');
+                } else {
+                    $this->resetLocationData(); // Reset locationData if no data found
+                }
+            } else {
+                $this->resetLocationData(); // Handle error response
+            }
+        } else {
+            $this->resetLocationData(); // Reset locationData if postalCode is empty
+        }
+    }
+
+    private function resetLocationData()
+    {
+        $this->state = null;
+        $this->country = null;
+        $this->selectedState = null;
+        $this->selectedCountry = null;
+        $this->cities = [];
+        $this->city = null;
+        $this->selectedCity = null;
+        $this->selectedDistrict = null;
+        $this->district = null;
+    }
+
+    public function resetAll()
+    {
+        // Reset the form fields
+        $this->reset([
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'address',
+            'postalCode',
+            'gender',
+            'city',
+            'state',
+            'country',
+            'district',
+            'selectedDistrict',
+            'selectedCity',
+            'selectedState',
+            'selectedCountry',
+            'password',
+            'confirmPassword',
+            'consent',
+            'image',
+        ]);
+    }
+
+    public function mount(Request $request)
+    {
+        $this->vendorType = $request->query('vendor_type', 'default');
+        // dd( $this->vendorType);
+        if ($this->vendorType == 'default') {
+            session()->flash('message', 'Please choose a vendor type.');
+            return redirect()->route('vendors'); // Change 'vendor-list' to your actual route name
+        }
+    }
+
+
 
 
     public function showAddVendorType()
@@ -146,11 +231,10 @@ private function resetFields()
         if ($this->vendor_type === 'addVendorType') {
 
             $this->showAddVendorTypeModal = !$this->showAddVendorTypeModal;
-            $this->vendor_type='';
+            $this->vendor_type = '';
         } else {
 
-            $this->showAddVendorTypeModal==$this->showAddVendorTypeModal;
-
+            $this->showAddVendorTypeModal == $this->showAddVendorTypeModal;
         }
     }
     public function closeAddVendorType()
@@ -159,7 +243,7 @@ private function resetFields()
 
         $this->showAddVendorTypeModal = false;
         $this->newVendorType = '';
-        $this->vendor_type='';
+        $this->vendor_type = '';
     }
     public function addVendorType()
     {
@@ -195,6 +279,7 @@ private function resetFields()
 
     public function render()
     {
+
         return view('livewire.vendor-register');
     }
 }
